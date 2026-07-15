@@ -14,8 +14,12 @@ creds_b64 = st.secrets["connections"]["gsheets"]["gcs_json_base64"]
 # 2. On la décode pour recréer le dictionnaire de connexion
 creds_json = json.loads(base64.b64decode(creds_b64).decode("utf-8"))
 
-# 3. On initialise la connexion gsheets avec ces identifiants décodés
-conn = st.connection("gsheets", type=GSheetsConnection, **creds_json)
+# 3. ASTUCE : On injecte temporairement les credentials décodés là où Streamlit s'attend à les trouver
+# Cela évite de casser la fonction st.connection()
+st.secrets["connections"]["gsheets"].update(creds_json)
+
+# 4. On peut maintenant appeler la connexion normalement !
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # Fonction pour lire les données du Google Sheet
 def charger_donnees():
