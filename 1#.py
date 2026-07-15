@@ -1,10 +1,11 @@
 import time
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import date
 import base64
 import json
+from google.oauth2 import service_account
+import gspread
 
 # 1. Configuration de la page (obligatoirement en tout premier avant le reste du code Streamlit)
 st.set_page_config(page_title="Hydratation", page_icon="💧", layout="centered")
@@ -20,28 +21,38 @@ creds_json = json.loads(base64.b64decode(creds_b64).decode("utf-8"))
 # 3. On extrait l'URL du tableur
 spreadsheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
 
-# 4. On appelle la connexion en lui injectant directement les paramètres décodés
-conn = st.connection(
-    "gsheets", 
-    type=GSheetsConnection, 
-    spreadsheet=spreadsheet_url, 
-    **creds_json
-)
+# 4. On crée les credentials Google et on initialise le client gspread
+scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+creds = service_account.Credentials.from_service_account_info(creds_json, scopes=scopes)
+gc = gspread.authorize(creds)
 
 # Fonction pour lire les données du Google Sheet
 def charger_donnees():
     try:
-        # On lit la feuille de calcul
-        df = conn.read(ttl="0") # ttl="0" pour forcer la mise à jour immédiate à chaque lecture
+        # On ouvre le tableur et la première feuille
+        sh = gc.open_by_url(spreadsheet_url)
+        worksheet = sh.get_worksheet(0)
+        # On lit toutes les valeurs et on les convertit en DataFrame
+        records = worksheet.get_all_records()
+        df = pd.DataFrame(records)
         return df
     except Exception:
-        # Si le tableau est vide, on renvoie un DataFrame de base
+        # Si le tableau est vide ou s'il y a un souci, on renvoie un DataFrame de base
         return pd.DataFrame(columns=["Date", "Verres"])
 
 # Fonction pour sauvegarder les données
 def sauvegarder_donnees(df):
-    # On met à jour le Google Sheet avec notre nouveau tableau
-    conn.update(data=df)
+    try:
+        sh = gc.open_by_url(spreadsheet_url)
+        worksheet = sh.get_worksheet(0)
+        # On vide la feuille actuelle et on réécrit le nouveau DataFrame
+        worksheet.clear()
+        worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+    except Exception as e:
+        st.error(f"Erreur d'écriture : {e}")
 
 # --- LOGIQUE DE L'APPLICATION ---
 
