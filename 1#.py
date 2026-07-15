@@ -2,6 +2,43 @@ import time
 
 import streamlit as st
 
+import json
+import os
+from datetime import date
+
+# Nom du fichier de sauvegarde
+DATA_FILE = "suivi_eau.json"
+
+# --- FONCTIONS DE PERSISTANCE ---
+
+def charger_donnees():
+    """Charge les données depuis le fichier JSON. Si le fichier n'existe pas, retourne un dictionnaire vide."""
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
+
+def sauvegarder_donnees(donnees):
+    """Sauvegarde les données dans le fichier JSON."""
+    with open(DATA_FILE, "w") as f:
+        json.dump(donnees, f, indent=4)
+
+# --- INITIALISATION ---
+
+# Récupérer la date du jour au format texte (ex: "2026-07-15")
+aujourdhui = str(date.today())
+
+# Charger tout l'historique
+historique = charger_donnees()
+
+# Si aujourd'hui n'est pas encore enregistré, on commence à 0 verre
+if aujourdhui not in historique:
+    historique[aujourdhui] = 0
+    sauvegarder_donnees(historique)
+
 # 1. On définit la fonction qui va afficher le pop-up
 @st.dialog("GG champion ! 🎉")
 def afficher_pop_up_gif():
