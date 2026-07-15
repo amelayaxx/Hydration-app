@@ -35,9 +35,14 @@ def charger_donnees():
         sh = gc.open_by_url(spreadsheet_url)
         worksheet = sh.get_worksheet(0)
         records = worksheet.get_all_records()
-        return pd.DataFrame(records)
+        df = pd.DataFrame(records)
+        
+        # SÉCURITÉ : Si le tableur est vide ou n'a pas les bonnes colonnes, on force leur création
+        if df.empty or "Date" not in df.columns or "Verres" not in df.columns:
+            df = pd.DataFrame(columns=["Date", "Verres"])
+            
+        return df
     except Exception as e:
-        # Affiche le nom de l'erreur exacte pour le diagnostic
         st.error(f"Erreur de lecture : {type(e).__name__} - {e}")
         return pd.DataFrame(columns=["Date", "Verres"])
 
@@ -50,10 +55,8 @@ def sauvegarder_donnees(df):
         worksheet.clear()
         # On prépare les données (en-têtes + lignes)
         data_to_write = [df.columns.values.tolist()] + df.values.tolist()
-        # Utilisation d'arguments nommés pour assurer la compatibilité entre gspread v5 et v6
         worksheet.update(values=data_to_write, range_name="A1")
     except Exception as e:
-        # Affiche le nom de l'erreur exacte pour le diagnostic
         st.error(f"Erreur d'écriture : {type(e).__name__} - {e}")
 
 # --- LOGIQUE DE L'APPLICATION ---
