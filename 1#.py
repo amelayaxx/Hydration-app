@@ -3,9 +3,19 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import date
+import base64
+import json
 
-# Connexion à ton Google Sheet (les accès seront configurés via Streamlit Secrets)
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- CONNEXION SÉCURISÉE À GOOGLE SHEETS ---
+
+# 1. On récupère la clé Base64 depuis les secrets
+creds_b64 = st.secrets["connections"]["gsheets"]["gcs_json_base64"]
+
+# 2. On la décode pour recréer le dictionnaire de connexion
+creds_json = json.loads(base64.b64decode(creds_b64).decode("utf-8"))
+
+# 3. On initialise la connexion gsheets avec ces identifiants décodés
+conn = st.connection("gsheets", type=GSheetsConnection, **creds_json)
 
 # Fonction pour lire les données du Google Sheet
 def charger_donnees():
