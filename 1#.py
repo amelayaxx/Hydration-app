@@ -1,43 +1,49 @@
 import time
-
 import streamlit as st
-
-import json
-import os
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
 from datetime import date
 
-# Nom du fichier de sauvegarde
-DATA_FILE = "suivi_eau.json"
+# Connexion à ton Google Sheet (les accès seront configurés via Streamlit Secrets)
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- FONCTIONS DE PERSISTANCE ---
-
+# Fonction pour lire les données du Google Sheet
 def charger_donnees():
-    """Charge les données depuis le fichier JSON. Si le fichier n'existe pas, retourne un dictionnaire vide."""
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return {}
-    return {}
+    try:
+        # On lit la feuille de calcul
+        df = conn.read(ttl="0") # ttl="0" pour forcer la mise à jour immédiate à chaque lecture
+        return df
+    except Exception:
+        # Si le tableau est vide, on renvoie un DataFrame de base
+        return pd.DataFrame(columns=["Date", "Verres"])
 
-def sauvegarder_donnees(donnees):
-    """Sauvegarde les données dans le fichier JSON."""
-    with open(DATA_FILE, "w") as f:
-        json.dump(donnees, f, indent=4)
+# Fonction pour sauvegarder les données
+def sauvegarder_donnees(df):
+    # On met à jour le Google Sheet avec notre nouveau tableau
+    conn.update(data=df)
 
-# --- INITIALISATION ---
+# --- LOGIQUE DE L'APPLICATION ---
 
-# Récupérer la date du jour au format texte (ex: "2026-07-15")
+# Charger les données actuelles
+df_historique = charger_donnees()
+
+# S'assurer que les dates sont bien lues comme du texte pour éviter les bugs
+df_historique["Date"] = df_historique["Date"].astype(str)
+
 aujourdhui = str(date.today())
 
-# Charger tout l'historique
-historique = charger_donnees()
-
-# Si aujourd'hui n'est pas encore enregistré, on commence à 0 verre
-if aujourdhui not in historique:
-    historique[aujourdhui] = 0
-    sauvegarder_donnees(historique)
+# Vérifier si aujourd'hui existe déjà dans notre tableau
+if aujourdhui in df_historique["Date"].values:
+    # Récupérer l'index de la ligne d'aujourd'hui
+    idx = df_historique[df_historique["Date"] == aujourdhui].index[0]
+    nb_verres = int(df_historique.loc[idx, "Verres"])
+else:
+    # Si la ligne n'existe pas, on l'ajoute avec 0 verre
+    nouveau_jour = pd.DataFrame([{"Date": aujourdhui, "Verres": 0}])
+    df_historique = pd.concat([df_historique, nouveau_jour], ignore_index=True)
+    sauvegarder_donnees(df_historique)
+    nb_verres = 0
+    idx = df_historique[df_historique["Date"] == aujourdhui].index[0]
 
 # 1. On définit la fonction qui va afficher le pop-up
 @st.dialog("GG champion ! 🎉")
