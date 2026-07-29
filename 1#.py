@@ -37,14 +37,14 @@ def charger_donnees():
         records = worksheet.get_all_records()
         df = pd.DataFrame(records)
         
-        # SÉCURITÉ : Si le tableur est vide ou n'a pas les bonnes colonnes, on force leur création
-        if df.empty or "Date" not in df.columns or "Verres" not in df.columns:
-            df = pd.DataFrame(columns=["Date", "Verres"])
+        # SÉCURITÉ : Vérification de la présence de la nouvelle colonne "Utilisateur"
+        if df.empty or "Date" not in df.columns or "Utilisateur" not in df.columns or "Verres" not in df.columns:
+            df = pd.DataFrame(columns=["Date", "Utilisateur", "Verres"])
             
         return df
     except Exception as e:
         st.error(f"Erreur de lecture : {type(e).__name__} - {e}")
-        return pd.DataFrame(columns=["Date", "Verres"])
+        return pd.DataFrame(columns=["Date", "Utilisateur", "Verres"])
 
 # Fonction pour sauvegarder les données
 def sauvegarder_donnees(df):
@@ -59,34 +59,47 @@ def sauvegarder_donnees(df):
     except Exception as e:
         st.error(f"Erreur d'écriture : {type(e).__name__} - {e}")
 
+# --- SELECTION DE L'UTILISATEUR ---
+
+# Liste des utilisateurs
+utilisateurs = ["Amélie", "Iulia"]
+
+st.sidebar.title("👤 Profil")
+utilisateur_actif = st.sidebar.selectbox("Qui utilise l'application ?", utilisateurs)
+
 # --- LOGIQUE DE L'APPLICATION ---
 
 # Charger les données actuelles
 df_historique = charger_donnees()
 
-# S'assurer que les dates sont bien lues comme du texte pour éviter les bugs
+# S'assurer que les dates et utilisateurs sont bien lus comme du texte
 df_historique["Date"] = df_historique["Date"].astype(str)
+df_historique["Utilisateur"] = df_historique["Utilisateur"].astype(str)
 
 aujourdhui = str(date.today())
 
-# Vérifier si aujourd'hui existe déjà dans notre tableau
-if aujourdhui in df_historique["Date"].values:
-    # Récupérer l'index de la ligne d'aujourd'hui
-    idx = df_historique[df_historique["Date"] == aujourdhui].index[0]
+# Filtre pour chercher la ligne de l'utilisateur pour aujourd'hui
+masque = (df_historique["Date"] == aujourdhui) & (df_historique["Utilisateur"] == utilisateur_actif)
+
+if masque.any():
+    # Récupérer l'index de la ligne existante pour cet utilisateur aujourd'hui
+    idx = df_historique[masque].index[0]
     nb_verres = int(df_historique.loc[idx, "Verres"])
 else:
-    # Si la ligne n'existe pas, on l'ajoute avec 0 verre
-    nouveau_jour = pd.DataFrame([{"Date": aujourdhui, "Verres": 0}])
+    # Si la ligne n'existe pas pour cet utilisateur aujourd'hui, on la crée
+    nouveau_jour = pd.DataFrame([{"Date": aujourdhui, "Utilisateur": utilisateur_actif, "Verres": 0}])
     df_historique = pd.concat([df_historique, nouveau_jour], ignore_index=True)
     sauvegarder_donnees(df_historique)
+    
+    # Récupérer le nouvel index créé
+    idx = df_historique[(df_historique["Date"] == aujourdhui) & (df_historique["Utilisateur"] == utilisateur_actif)].index[0]
     nb_verres = 0
-    idx = df_historique[df_historique["Date"] == aujourdhui].index[0]
 
 # --- POP-UPS ---
 
 @st.dialog("GG champion ! 🎉")
 def afficher_pop_up_gif():
-    st.write("Tu viens de boire un verre et de l'eau ! 💦")
+    st.write(f"{utilisateur_actif}, tu viens de boire un verre d'eau ! 💦")
     st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/TKJtXbgD1RlGHGJiXi/giphy.gif", width=300)
     time.sleep(3)
     st.rerun()
@@ -114,7 +127,7 @@ def afficher_pop_up_gif4():
 
 # --- INTERFACE UTILISATEUR ---
 
-st.title("💧 Mon Compteur d'Eau")
+st.title(f"💧 Compteur d'Eau de {utilisateur_actif}")
 
 # Organiser les boutons côte à côte avec des colonnes
 col1, col2 = st.columns(2)
@@ -141,7 +154,7 @@ st.write("---")
 
 # Un affichage stylé connecté au Google Sheet
 st.metric(
-    label="Verres bus aujourd'hui", 
+    label=f"Verres bus aujourd'hui par {utilisateur_actif}", 
     value=f"{nb_verres} / 8", 
     delta=f"{max(0, 8 - nb_verres)} restants",
     delta_color="inverse"
