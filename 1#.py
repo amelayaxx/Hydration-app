@@ -6,6 +6,7 @@ import base64
 import json
 from google.oauth2 import service_account
 import gspread
+import plotly.express as px
 
 # 1. Configuration de la page (obligatoirement en tout premier)
 st.set_page_config(page_title="Hydratation", page_icon="💧", layout="centered")
@@ -37,7 +38,7 @@ def charger_donnees():
         records = worksheet.get_all_records()
         df = pd.DataFrame(records)
         
-        # SÉCURITÉ : Vérification de la présence de la nouvelle colonne "Utilisateur"
+        # SÉCURITÉ : Vérification de la présence de la colonne "Utilisateur"
         if df.empty or "Date" not in df.columns or "Utilisateur" not in df.columns or "Verres" not in df.columns:
             df = pd.DataFrame(columns=["Date", "Utilisateur", "Verres"])
             
@@ -62,7 +63,7 @@ def sauvegarder_donnees(df):
 # --- SELECTION DE L'UTILISATEUR ---
 
 # Liste des utilisateurs
-utilisateurs = ["Amélie", "Iulia" , "Ethan"]
+utilisateurs = ["Amélie", "Iulia", "Ethan"]
 
 st.sidebar.title("👤 Profil")
 utilisateur_actif = st.sidebar.selectbox("Qui utilise l'application ?", utilisateurs)
@@ -117,7 +118,7 @@ def afficher_pop_up_gif2():
 def afficher_pop_up_gif3():
     st.write("Muy, Muy,... So bad, So bad !")
     st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/joI9gJHWuZHed9UOqp/giphy.gif", width=300)
-    st.audio ("Tuveuxretournerendis.m4a", autoplay=True)
+    st.audio("Tuveuxretournerendis.m4a", autoplay=True)
     time.sleep(4)
     st.rerun()
 
@@ -129,47 +130,95 @@ def afficher_pop_up_gif4():
     time.sleep(3)
     st.rerun()
 
-# --- INTERFACE UTILISATEUR ---
+# --- STRUCTURE DE L'APPLICATION AVEC ONGLETS ---
 
-st.title(f"💧 Compteur d'Eau de {utilisateur_actif}")
+tab_saisie, tab_dashboard = st.tabs(["💧 Compteur", "📊 Statistiques & Tendances"])
 
-# Organiser les boutons côte à côte avec des colonnes
-col1, col2 = st.columns(2)
+# --- ONGLET 1 : SAISIE DES VERRES ---
+with tab_saisie:
+    st.title(f"💧 Compteur d'Eau de {utilisateur_actif}")
 
-with col1:
-    if st.button("➕ J'ai bu un verre", use_container_width=True):
-        df_historique.loc[idx, "Verres"] = nb_verres + 1
-        sauvegarder_donnees(df_historique)
-        afficher_pop_up_gif()
-        
-    if st.button("🔄 Zéro", use_container_width=True):
-        df_historique.loc[idx, "Verres"] = 0
-        sauvegarder_donnees(df_historique)
-        afficher_pop_up_gif3()
+    # Organiser les boutons côte à côte avec des colonnes
+    col1, col2 = st.columns(2)
 
-with col2:
-    if st.button("➖ Oups un de trop", use_container_width=True):
-        if nb_verres > 0:
-            df_historique.loc[idx, "Verres"] = nb_verres - 1
+    with col1:
+        if st.button("➕ J'ai bu un verre", use_container_width=True):
+            df_historique.loc[idx, "Verres"] = nb_verres + 1
             sauvegarder_donnees(df_historique)
-            afficher_pop_up_gif2()
+            afficher_pop_up_gif()
+            
+        if st.button("🔄 Zéro", use_container_width=True):
+            df_historique.loc[idx, "Verres"] = 0
+            sauvegarder_donnees(df_historique)
+            afficher_pop_up_gif3()
 
-st.write("---")
+    with col2:
+        if st.button("➖ Oups un de trop", use_container_width=True):
+            if nb_verres > 0:
+                df_historique.loc[idx, "Verres"] = nb_verres - 1
+                sauvegarder_donnees(df_historique)
+                afficher_pop_up_gif2()
 
-# Un affichage stylé connecté au Google Sheet
-st.metric(
-    label=f"Verres bus aujourd'hui par {utilisateur_actif}", 
-    value=f"{nb_verres} / 8", 
-    delta=f"{max(0, 8 - nb_verres)} restants",
-    delta_color="inverse"
-)
+    st.write("---")
 
-# Déclenchement de l'objectif atteint (8 verres ou plus)
-if nb_verres >= 8:
-    st.balloons()
-    time.sleep(2)
-    afficher_pop_up_gif4()
+    # Un affichage stylé connecté au Google Sheet
+    st.metric(
+        label=f"Verres bus aujourd'hui par {utilisateur_actif}", 
+        value=f"{nb_verres} / 8", 
+        delta=f"{max(0, 8 - nb_verres)} restants",
+        delta_color="inverse"
+    )
 
-# Barre de progression visuelle
-progression = min(nb_verres / 8, 1.0)
-st.progress(progression)
+    # Déclenchement de l'objectif atteint (8 verres ou plus)
+    if nb_verres >= 8:
+        st.balloons()
+        time.sleep(2)
+        afficher_pop_up_gif4()
+
+    # Barre de progression visuelle
+    progression = min(nb_verres / 8, 1.0)
+    st.progress(progression)
+
+# --- ONGLET 2 : DASHBOARD / STATISTIQUES ---
+with tab_dashboard:
+    st.title(f"📊 Dashboard de {utilisateur_actif}")
+    
+    # Filtrer uniquement les données de l'utilisateur actif
+    df_user = df_historique[df_historique["Utilisateur"] == utilisateur_actif].copy()
+    
+    if df_user.empty:
+        st.info("Aucune donnée disponible pour le moment.")
+    else:
+        # Convertir la colonne Date au format datetime pour un bon affichage chronologique
+        df_user["Date"] = pd.to_datetime(df_user["Date"])
+        df_user = df_user.sort_values("Date")
+        
+        # 1. Courbe de tendance
+        st.subheader("📈 Évolution de la consommation")
+        fig_line = px.line(
+            df_user, 
+            x="Date", 
+            y="Verres", 
+            markers=True,
+            title=f"Nombre de verres bus par jour ({utilisateur_actif})",
+            labels={"Verres": "Nombre de verres", "Date": "Date"}
+        )
+        # Ligne d'objectif à 8 verres
+        fig_line.add_hline(y=8, line_dash="dot", line_color="green", annotation_text="Objectif (8 verres)")
+        st.plotly_chart(fig_line, use_container_width=True)
+        
+        st.write("---")
+        
+        # 2. Camembert Objectif
+        st.subheader("🍰 Réussite de l'objectif (8 verres/jour)")
+        df_user["Statut"] = df_user["Verres"].apply(lambda x: "Objectif atteint 🎉" if x >= 8 else "Sous l'objectif ❌")
+        
+        fig_pie = px.pie(
+            df_user, 
+            names="Statut", 
+            title="Proportion de jours avec objectif atteint",
+            color="Statut",
+            color_discrete_map={"Objectif atteint 🎉": "#2ECC71", "Sous l'objectif ❌": "#E74C3C"},
+            hole=0.4
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
