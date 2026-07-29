@@ -13,16 +13,10 @@ st.set_page_config(page_title="Hydratation", page_icon="💧", layout="centered"
 
 # --- CONNEXION SÉCURISÉE À GOOGLE SHEETS ---
 
-# 1. On récupère la clé Base64 depuis les secrets
 creds_b64 = st.secrets["connections"]["gsheets"]["gcs_json_base64"]
-
-# 2. On la décode pour recréer le dictionnaire de connexion
 creds_json = json.loads(base64.b64decode(creds_b64).decode("utf-8"))
-
-# 3. On extrait l'URL du tableur
 spreadsheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
 
-# 4. On crée les credentials Google et on initialise le client gspread
 scopes = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -38,7 +32,6 @@ def charger_donnees():
         records = worksheet.get_all_records()
         df = pd.DataFrame(records)
         
-        # SÉCURITÉ : Vérification de la présence de la colonne "Utilisateur"
         if df.empty or "Date" not in df.columns or "Utilisateur" not in df.columns or "Verres" not in df.columns:
             df = pd.DataFrame(columns=["Date", "Utilisateur", "Verres"])
             
@@ -52,21 +45,27 @@ def sauvegarder_donnees(df):
     try:
         sh = gc.open_by_url(spreadsheet_url)
         worksheet = sh.get_worksheet(0)
-        # On vide la feuille actuelle
         worksheet.clear()
-        # On prépare les données (en-têtes + lignes)
         data_to_write = [df.columns.values.tolist()] + df.values.tolist()
         worksheet.update(values=data_to_write, range_name="A1")
     except Exception as e:
         st.error(f"Erreur d'écriture : {type(e).__name__} - {e}")
 
-# --- SELECTION DE L'UTILISATEUR ---
+# --- BARRE LATÉRALE : PROFIL ET SÉLECTION DE LA DATE ---
 
-# Liste des utilisateurs
+st.sidebar.title("👤 Profil & Date")
+
+# 1. Choix de l'utilisateur
 utilisateurs = ["Amélie", "Iulia", "Ethan"]
-
-st.sidebar.title("👤 Profil")
 utilisateur_actif = st.sidebar.selectbox("Qui utilise l'application ?", utilisateurs)
+
+# 2. Choix de la date (par défaut : aujourd'hui)
+date_selectionnee = st.sidebar.date_input("Date à modifier / consulter", date.today())
+date_str = str(date_selectionnee)
+
+# Un petit message d'avertissement dans le menu si on ne consulte pas aujourd'hui
+if date_selectionnee != date.today():
+    st.sidebar.info(f"📅 Vous modifiez la journée du **{date_selectionnee.strftime('%d/%m/%Y')}**")
 
 # --- LOGIQUE DE L'APPLICATION ---
 
@@ -77,30 +76,27 @@ df_historique = charger_donnees()
 df_historique["Date"] = df_historique["Date"].astype(str)
 df_historique["Utilisateur"] = df_historique["Utilisateur"].astype(str)
 
-aujourdhui = str(date.today())
-
-# Filtre pour chercher la ligne de l'utilisateur pour aujourd'hui
-masque = (df_historique["Date"] == aujourdhui) & (df_historique["Utilisateur"] == utilisateur_actif)
+# Filtre pour chercher la ligne de l'utilisateur pour LA DATE SÉLECTIONNÉE
+masque = (df_historique["Date"] == date_str) & (df_historique["Utilisateur"] == utilisateur_actif)
 
 if masque.any():
-    # Récupérer l'index de la ligne existante pour cet utilisateur aujourd'hui
+    # Récupérer l'index de la ligne existante
     idx = df_historique[masque].index[0]
     nb_verres = int(df_historique.loc[idx, "Verres"])
 else:
-    # Si la ligne n'existe pas pour cet utilisateur aujourd'hui, on la crée
-    nouveau_jour = pd.DataFrame([{"Date": aujourdhui, "Utilisateur": utilisateur_actif, "Verres": 0}])
+    # Si la ligne n'existe pas pour cette date et cet utilisateur, on la crée
+    nouveau_jour = pd.DataFrame([{"Date": date_str, "Utilisateur": utilisateur_actif, "Verres": 0}])
     df_historique = pd.concat([df_historique, nouveau_jour], ignore_index=True)
     sauvegarder_donnees(df_historique)
     
-    # Récupérer le nouvel index créé
-    idx = df_historique[(df_historique["Date"] == aujourdhui) & (df_historique["Utilisateur"] == utilisateur_actif)].index[0]
+    idx = df_historique[(df_historique["Date"] == date_str) & (df_historique["Utilisateur"] == utilisateur_actif)].index[0]
     nb_verres = 0
 
 # --- POP-UPS ---
 
 @st.dialog("GG champion ! 🎉")
 def afficher_pop_up_gif():
-    st.write(f"{utilisateur_actif}, tu viens de boire un verre d'eau ! 💦")
+    st.write(f"{utilisateur_actif}, tu viens d'ajouter un verre d'eau ! 💦")
     st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/TKJtXbgD1RlGHGJiXi/giphy.gif", width=300)
     st.audio("Children Yay Sound Effect HD.mp3", autoplay=True)
     time.sleep(5)
@@ -136,9 +132,12 @@ tab_saisie, tab_dashboard = st.tabs(["💧 Compteur", "📊 Statistiques & Tenda
 
 # --- ONGLET 1 : SAISIE DES VERRES ---
 with tab_saisie:
-    st.title(f"💧 Compteur d'Eau de {utilisateur_actif}")
+    # Affichage dynamique selon que la date soit aujourd'hui ou un autre jour
+    if date_selectionnee == date.today():
+        st.title(f"💧 Compteur d'Eau de {utilisateur_actif}")
+    else:
+        st.title(f"📅 Historique du {date_selectionnee.strftime('%d/%m/%Y')} ({utilisateur_actif})")
 
-    # Organiser les boutons côte à côte avec des colonnes
     col1, col2 = st.columns(2)
 
     with col1:
@@ -161,21 +160,21 @@ with tab_saisie:
 
     st.write("---")
 
-    # Un affichage stylé connecté au Google Sheet
+    # Adaptabilité du libellé selon la date choisie
+    libelle_metric = "Verres bus aujourd'hui" if date_selectionnee == date.today() else f"Verres bus le {date_selectionnee.strftime('%d/%m/%Y')}"
+
     st.metric(
-        label=f"Verres bus aujourd'hui par {utilisateur_actif}", 
+        label=f"{libelle_metric} par {utilisateur_actif}", 
         value=f"{nb_verres} / 8", 
         delta=f"{max(0, 8 - nb_verres)} restants",
         delta_color="inverse"
     )
 
-    # Déclenchement de l'objectif atteint (8 verres ou plus)
     if nb_verres >= 8:
         st.balloons()
         time.sleep(2)
         afficher_pop_up_gif4()
 
-    # Barre de progression visuelle
     progression = min(nb_verres / 8, 1.0)
     st.progress(progression)
 
@@ -183,17 +182,15 @@ with tab_saisie:
 with tab_dashboard:
     st.title(f"📊 Dashboard de {utilisateur_actif}")
     
-    # Filtrer uniquement les données de l'utilisateur actif
     df_user = df_historique[df_historique["Utilisateur"] == utilisateur_actif].copy()
     
     if df_user.empty:
         st.info("Aucune donnée disponible pour le moment.")
     else:
-        # Convertir la colonne Date au format datetime pour un bon affichage chronologique
         df_user["Date"] = pd.to_datetime(df_user["Date"])
         df_user = df_user.sort_values("Date")
         
-        # 1. Courbe de tendance
+        # Courbe de tendance
         st.subheader("📈 Évolution de la consommation")
         fig_line = px.line(
             df_user, 
@@ -203,14 +200,13 @@ with tab_dashboard:
             title=f"Nombre de verres bus par jour ({utilisateur_actif})",
             labels={"Verres": "Nombre de verres", "Date": "Date"}
         )
-        # Ligne d'objectif à 8 verres
         fig_line.add_hline(y=8, line_dash="dot", line_color="green", annotation_text="Objectif (8 verres)")
         st.plotly_chart(fig_line, use_container_width=True)
         
         st.write("---")
         
-        # 2. Camembert Objectif
-        st.subheader("🍰 Réussite de l'objectif (8 verres/jour)")
+        # Camembert Objectif
+        st.subheader("✔ Réussite de l'objectif (8 verres/jour)")
         df_user["Statut"] = df_user["Verres"].apply(lambda x: "Objectif atteint 🎉" if x >= 8 else "Sous l'objectif ❌")
         
         fig_pie = px.pie(
