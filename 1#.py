@@ -93,11 +93,6 @@ else:
     if date_selectionnee != date.today():
         st.sidebar.info(f"📅 Modification de la journée du **{date_selectionnee.strftime('%d/%m/%Y')}**")
 
-    # Bouton pour revenir à l'écran d'accueil
-    if st.sidebar.button("🚪 Changer d'utilisateur"):
-        st.session_state["utilisateur_actif"] = None
-        st.rerun()
-
     # --- LOGIQUE DE L'APPLICATION ---
     df_historique = charger_donnees()
     df_historique["Date"] = df_historique["Date"].astype(str)
