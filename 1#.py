@@ -62,7 +62,7 @@ def sauvegarder_donnees(df):
 # --- SELECTION DE L'UTILISATEUR ---
 
 # Liste des utilisateurs
-utilisateurs = ["Amélie", "Iulia"]
+utilisateurs = ["Amélie", "Iulia" , "Ethan"]
 
 st.sidebar.title("👤 Profil")
 utilisateur_actif = st.sidebar.selectbox("Qui utilise l'application ?", utilisateurs)
