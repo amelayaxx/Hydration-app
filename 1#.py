@@ -55,7 +55,7 @@ utilisateurs = ["Amélie", "Iulia", "Ethan"]
 
 # --- ÉCRAN DE SÉLECTION DU PROFIL (Si aucun profil n'est sélectionné) ---
 if st.session_state["utilisateur_actif"] is None:
-    st.title("💧 Bienvenue sur l'App Hydratation !")
+    st.title("💧 Bienvenue sur Hydratation acompagnée par Dembouz !")
     st.write("### Qui est là aujourd'hui ?")
     st.write("Sélectionne ton prénom pour accéder à ton compteur :")
     
@@ -68,7 +68,7 @@ if st.session_state["utilisateur_actif"] is None:
 # --- SI UN PROFIL EST SÉLECTIONNÉ : AFFICHAGE DE L'APPLICATION ---
 else:
     # --- BARRE LATÉRALE ---
-    st.sidebar.title("👤 Profil & Date")
+    st.sidebar.title("👤 Profil & Date 📅")
 
     # Synchronisation du menu déroulant avec la session
     index_defaut = utilisateurs.index(st.session_state["utilisateur_actif"]) if st.session_state["utilisateur_actif"] in utilisateurs else 0
