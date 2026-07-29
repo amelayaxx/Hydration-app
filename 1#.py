@@ -101,16 +101,16 @@ else:
 def afficher_pop_up_gif():
     st.write(f"{utilisateur_actif}, tu viens de boire un verre d'eau ! 💦")
     st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/TKJtXbgD1RlGHGJiXi/giphy.gif", width=300)
-    st.audio("https://youtu.be/5gsp7eNmT-c?si=cCwM9NaldxietRA3", autoplay=True)
-    time.sleep(3)
+    st.audio("Children Yay Sound Effect HD.mp3", autoplay=True)
+    time.sleep(5)
     st.rerun()
 
 @st.dialog("Ohh lala...")
 def afficher_pop_up_gif2():
     st.write("Tu confonds ta droite et ta gauche ?")
     st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/gtWPqMuppPgrQb25Oi/giphy.gif", width=300)
-    st.audio("https://youtu.be/a2bzoLVJDfk?si=N7XOVY75FHO2_Fdk", autoplay=True)
-    time.sleep(3)
+    st.audio("QUAND DEMBÉLÉ NE C’EST PAS SI IL EST DROITIER OU GAUCHER.mp3", autoplay=True)
+    time.sleep(5)
     st.rerun()
 
 @st.dialog("Ah tu veux retourner en District ? ")
@@ -118,7 +118,7 @@ def afficher_pop_up_gif3():
     st.write("Muy, Muy,... So bad, So bad !")
     st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/joI9gJHWuZHed9UOqp/giphy.gif", width=300)
     st.audio ("Tuveuxretournerendis.m4a", autoplay=True)
-    time.sleep(3)
+    time.sleep(5)
     st.rerun()
 
 @st.dialog("FIUMMMM, ZOOMM")
