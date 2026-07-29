@@ -213,12 +213,12 @@ else:
                 title=f"Nombre de verres bus par jour ({utilisateur_actif})",
                 labels={"Verres": "Nombre de verres", "Date": "Date"}
             )
-            fig_line.add_hline(y=8, line_dash="dot", line_color="green", annotation_text="Objectif (8 verres)")
+            fig_line.add_hline(y=8, line_dash="dot", line_color="green", annotation_text="Objectif (8 verres/2L)")
             st.plotly_chart(fig_line, use_container_width=True)
             
             st.write("---")
             
-            st.subheader("🍰 Réussite de l'objectif (8 verres/jour)")
+            st.subheader("✔ Réussite de l'objectif (8 verres/2L par jour)")
             df_user["Statut"] = df_user["Verres"].apply(lambda x: "Objectif atteint 🎉" if x >= 8 else "Sous l'objectif ❌")
             
             fig_pie = px.pie(
