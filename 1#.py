@@ -1,4 +1,5 @@
 import time
+import random
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -110,12 +111,17 @@ else:
         idx = df_historique[(df_historique["Date"] == date_str) & (df_historique["Utilisateur"] == utilisateur_actif)].index[0]
         nb_verres = 0
 
+    #SONS DES POP-UPS
+    sons_petite_victoire = [ "Children Yay Sound Effect HD.mp3", "30 ans y en aura plus.mp3"]
+    sons_retour_zero = ["Tuveuxretournerendis.m4a", "Muymuy.m4a"]
+    sons_8verres = ["Alors_ces_F50_Mr_Dembele_foot_128kbps_1247649_cut.mp3", "Triple.mp3"]
+    
     # --- POP-UPS ---
     @st.dialog("GG champion ! 🎉")
     def afficher_pop_up_gif():
         st.write(f"{utilisateur_actif}, tu viens de boire un verre et de l'eau ! 💦")
         st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/TKJtXbgD1RlGHGJiXi/giphy.gif", width=300)
-        st.audio("Children Yay Sound Effect HD.mp3", autoplay=True)
+        st.audio(random.choice(sons_petite_victoire), autoplay=True)
         time.sleep(5)
         st.rerun()
 
@@ -131,7 +137,7 @@ else:
     def afficher_pop_up_gif3():
         st.write("Muy, Muy,... So bad, So bad !")
         st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/joI9gJHWuZHed9UOqp/giphy.gif", width=300)
-        st.audio("Tuveuxretournerendis.m4a", autoplay=True)
+        st.audio(random.choice(sons_retour_zero), autoplay=True)
         time.sleep(4)
         st.rerun()
 
@@ -139,7 +145,7 @@ else:
     def afficher_pop_up_gif4():
         st.write("Tiplé ou rien ! 💦")
         st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/OGkI5rcORf66tBQBB7/giphy.gif", width=300)
-        st.audio("Alors_ces_F50_Mr_Dembele_foot_128kbps_1247649_cut.mp3", autoplay=True)
+        st.audio(random.choice(sons_8verres), autoplay=True)
         time.sleep(3)
         st.rerun()
 
