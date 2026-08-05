@@ -3,7 +3,6 @@ import random
 import streamlit as st
 import pandas as pd
 from datetime import date
-import json
 from google.oauth2 import service_account
 import gspread
 import plotly.express as px
@@ -15,10 +14,9 @@ st.set_page_config(page_title="Hydratation", page_icon="💧", layout="centered"
 if "utilisateur_actif" not in st.session_state:
     st.session_state["utilisateur_actif"] = None
 
-# --- CONNEXION SÉCURISÉE À GOOGLE SHEETS (JSON DIRECT) ---
-# Directement via le JSON collé dans les secrets Streamlit Cloud
-creds_json_raw = st.secrets["connections"]["gsheets"]["service_account_json"]
-creds_json = json.loads(creds_json_raw)
+# --- CONNEXION SÉCURISÉE À GOOGLE SHEETS (NATIVE TOML) ---
+# Streamlit transforme directement le bloc [connections.gsheets.service_account] en dictionnaire Python
+creds_json = dict(st.secrets["connections"]["gsheets"]["service_account"])
 spreadsheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
 
 scopes = [
@@ -74,7 +72,7 @@ else:
     index_defaut = utilisateurs.index(st.session_state["utilisateur_actif"]) if st.session_state["utilisateur_actif"] in utilisateurs else 0
     
     utilisateur_selectionne = st.sidebar.selectbox(
-        "Qui utilise l'application ?", 
+        "Qui me regarde ?", 
         utilisateurs, 
         index=index_defaut
     )
