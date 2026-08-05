@@ -146,6 +146,14 @@ else:
         time.sleep(3)
         st.rerun()
 
+    @st.dialog("💧💧💧")
+    def afficher_pop_up_gif5():
+        st.write("Glou glou de verres d'eau ! Ça sent le repas !")
+        st.image("https://youtube.com/shorts/RHZWHVauHiY?si=RAIzgZRTr7m50shw", width=300)
+        st.audio("Roblox Drinking Sound Effect.mp3", autoplay=True)
+        time.sleep(5)
+        st.rerun()
+
     # --- STRUCTURE DE L'APPLICATION AVEC ONGLETS ---
     tab_saisie, tab_dashboard = st.tabs(["💧 Compteur", "📊 Statistiques & Tendances"])
 
@@ -175,6 +183,11 @@ else:
                     df_historique.loc[idx, "Verres"] = nb_verres - 1
                     sauvegarder_donnees(df_historique)
                     afficher_pop_up_gif2()
+
+            if st.button("2 verres d'un coup !", use_container_width=True):
+                df_historique.loc[idx, "Verres"] = nb_verres + 2
+                sauvegarder_donnees(df_historique)
+                afficher_pop_up_gif5()
 
         st.write("---")
 
