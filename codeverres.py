@@ -149,7 +149,7 @@ else:
     @st.dialog("💧💧💧")
     def afficher_pop_up_gif5():
         st.write("Glou glou de verres d'eau ! Ça sent le repas !")
-        st.image("https://youtube.com/shorts/RHZWHVauHiY?si=RAIzgZRTr7m50shw", width=300)
+        st.video("https://youtube.com/shorts/RHZWHVauHiY?si=RAIzgZRTr7m50shw", width=300)
         st.audio("Roblox Drinking Sound Effect.mp3", autoplay=True)
         time.sleep(5)
         st.rerun()
