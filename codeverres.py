@@ -3,7 +3,6 @@ import random
 import streamlit as st
 import pandas as pd
 from datetime import date
-import base64
 import json
 from google.oauth2 import service_account
 import gspread
@@ -13,13 +12,13 @@ import plotly.express as px
 st.set_page_config(page_title="Hydratation", page_icon="💧", layout="centered")
 
 # --- INITIALISATION DE LA SESSION ---
-# On vérifie si un utilisateur a déjà été choisi durant la session
 if "utilisateur_actif" not in st.session_state:
     st.session_state["utilisateur_actif"] = None
 
-# --- CONNEXION SÉCURISÉE À GOOGLE SHEETS ---
-creds_b64 = st.secrets["connections"]["gsheets"]["gcs_json_base64"]
-creds_json = json.loads(base64.b64decode(creds_b64).decode("utf-8"))
+# --- CONNEXION SÉCURISÉE À GOOGLE SHEETS (JSON DIRECT) ---
+# Directement via le JSON collé dans les secrets Streamlit Cloud
+creds_json_raw = st.secrets["connections"]["gsheets"]["service_account_json"]
+creds_json = json.loads(creds_json_raw)
 spreadsheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
 
 scopes = [
@@ -56,7 +55,7 @@ utilisateurs = ["Amélie", "Iulia", "Ethan", "Sarah"]
 
 # --- ÉCRAN DE SÉLECTION DU PROFIL (Si aucun profil n'est sélectionné) ---
 if st.session_state["utilisateur_actif"] is None:
-    st.title("💧 Bienvenue sur Hydratation acompagnée par Dembouz !")
+    st.title("💧 Bienvenue sur Hydratation accompagnée par Dembouz !")
     st.write("### Qui est là aujourd'hui ?")
     st.write("Sélectionne ton prénom pour accéder à ton compteur :")
     
@@ -94,6 +93,11 @@ else:
     if date_selectionnee != date.today():
         st.sidebar.info(f"📅 Modification de la journée du **{date_selectionnee.strftime('%d/%m/%Y')}**")
 
+    # Bouton pour se déconnecter ou retourner à l'accueil
+    if st.sidebar.button("🚪 Changer d'utilisateur"):
+        st.session_state["utilisateur_actif"] = None
+        st.rerun()
+
     # --- LOGIQUE DE L'APPLICATION ---
     df_historique = charger_donnees()
     df_historique["Date"] = df_historique["Date"].astype(str)
@@ -111,15 +115,15 @@ else:
         idx = df_historique[(df_historique["Date"] == date_str) & (df_historique["Utilisateur"] == utilisateur_actif)].index[0]
         nb_verres = 0
 
-    #SONS DES POP-UPS
-    sons_petite_victoire = [ "Children Yay Sound Effect HD.mp3", "30 ans y en aura plus.mp3"]
+    # SONS DES POP-UPS
+    sons_petite_victoire = ["Children Yay Sound Effect HD.mp3", "30 ans y en aura plus.mp3"]
     sons_retour_zero = ["Tuveuxretournerendis.m4a", "Muymuy.m4a"]
     sons_8verres = ["Alors_ces_F50_Mr_Dembele_foot_128kbps_1247649_cut.mp3", "Triple.mp3"]
     
     # --- POP-UPS ---
     @st.dialog("GG champion ! 🎉")
     def afficher_pop_up_gif():
-        st.write(f"{utilisateur_actif}, tu viens de boire un verre et de l'eau ! 💦")
+        st.write(f"{utilisateur_actif}, tu viens de boire un verre d'eau ! 💦")
         st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/TKJtXbgD1RlGHGJiXi/giphy.gif", width=300)
         st.audio(random.choice(sons_petite_victoire), autoplay=True)
         time.sleep(5)
