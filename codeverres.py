@@ -72,7 +72,7 @@ else:
     index_defaut = utilisateurs.index(st.session_state["utilisateur_actif"]) if st.session_state["utilisateur_actif"] in utilisateurs else 0
     
     utilisateur_selectionne = st.sidebar.selectbox(
-        "Qui me regarde ?", 
+        "Autres profiles:", 
         utilisateurs, 
         index=index_defaut
     )
@@ -90,11 +90,6 @@ else:
 
     if date_selectionnee != date.today():
         st.sidebar.info(f"📅 Modification de la journée du **{date_selectionnee.strftime('%d/%m/%Y')}**")
-
-    # Bouton pour se déconnecter ou retourner à l'accueil
-    if st.sidebar.button("🚪 Changer d'utilisateur"):
-        st.session_state["utilisateur_actif"] = None
-        st.rerun()
 
     # --- LOGIQUE DE L'APPLICATION ---
     df_historique = charger_donnees()
@@ -121,7 +116,7 @@ else:
     # --- POP-UPS ---
     @st.dialog("GG champion ! 🎉")
     def afficher_pop_up_gif():
-        st.write(f"{utilisateur_actif}, tu viens de boire un verre d'eau ! 💦")
+        st.write(f"{utilisateur_actif}, tu viens de boire un verre et de l'eau ! 💦")
         st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTMyam80ZWZ5Njgzenh0amxsMWMwcW50ejF5bmF2cHo5bDdoNWU2dyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/TKJtXbgD1RlGHGJiXi/giphy.gif", width=300)
         st.audio(random.choice(sons_petite_victoire), autoplay=True)
         time.sleep(5)
